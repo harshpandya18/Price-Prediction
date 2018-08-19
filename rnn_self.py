@@ -1,0 +1,108 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Aug 18 18:47:48 2018
+
+@author: admin
+"""
+
+#Step 1 : Data Preprocessing
+
+#Importing the libraries
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+
+#Importing the training set
+training_set = pd.read_csv('Google_Stock_Price_Train.csv')
+training_set = training_set.iloc[:,1:2].values
+
+#Feature Scaling
+from sklearn.preprocessing import MinMaxScaler
+sc = MinMaxScaler(feature_range = (0,1))
+training_set = sc.fit_transform(training_set)
+
+#Getting the inputs and the outputs
+X_train = training_set[0:1257]
+y_train = training_set[1:1258]
+
+#Reshaping
+X_train = np.reshape(X_train,(1257,1,1))
+
+#Part 2: Building the RNN
+
+#Importing the keras libraries and packages
+
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.layers import LSTM
+
+#Initializing the RNN
+regressor = Sequential()
+
+#Adding the input and the LSTM layer
+regressor.add(LSTM(units=4 , activation='sigmoid' , input_shape=(None ,1)))
+
+#Adding the output layer 
+regressor.add(Dense(units=1))
+
+#Compiling the RNN
+regressor.compile(optimizer = 'adam' , loss = 'mean_squared_error')
+
+#Fitting the RNN to the training set
+regressor.fit(X_train ,y_train,batch_size=32 , epochs=200)
+
+
+#Part 3: Making the predictions and visualizing the results
+
+#Getting the real stock price of 2017
+test_set = pd.read_csv('Google_Stock_Price_Test.csv')
+real_stock_price = test_set.iloc[:,1:2].values
+
+#Getting the predicted stock price of 2017
+inputs = real_stock_price
+inputs =sc.transform(inputs)
+inputs= np.reshape(inputs , (20 , 1, 1))
+predicted_stock_price= regressor.predict(inputs)
+predicted_stock_price= sc.inverse_transform(predicted_stock_price)
+
+#Visualizing the results
+plt.plot(real_stock_price, color='red' , label ='Real Google Stock Price')
+plt.plot(predicted_stock_price, color='blue' , label ='Predicted Google Stock Price')
+
+
+real_stock_price_train = regressor.predict(X_train)
+real_stock_price_train = real_stock_price_train.iloc[:,1:2].values
+
+predicted_stock_price_train = regressor.predict(X_train)
+predicted_stock_price_train = sc.inverse_transform(predicted_stock_price_train)
+
+#Saving the current model
+regressor.save('rnn_self_save.h5')
+
+#Loading the saved model
+from keras.models import load_model
+regressor = load_model('rnn_self_save.h5')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
